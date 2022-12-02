@@ -8,10 +8,13 @@ const ffprobe = require('ffprobe-static').path;
 
 const tryExeca = async (BIN, cmd) => {
   try {
-    cmd = ['-v','quiet'].concat(cmd) //no stderr
+    // cmd = ['-v','quiet'].concat(cmd) //no stderr
+    cmd = ['-hide_banner'].concat(cmd)
     if(BIN==ffmpeg) cmd=cmd.concat(['-y']) 
     log.log(`ffmpegUtils.exe tryExeca cmd: ${cmd}`)
-    return await execa(BIN,cmd)
+    let proc = execa(BIN,cmd)
+    proc.stderr.pipe(process.stdout)
+    return await proc
   } catch (err) {
     log.error(err)
   }
@@ -54,5 +57,43 @@ const videoToFrames = async (infile,outdir)=>{
   ]
   await tryExeca(ffmpeg,cmd)
 }
+const framesToVideo = async (indir,outfile,options)=>{
+  let fps = 30 //reasonable default
+  let source = options.sourceVideo
+  if (options.fps){
+    fps = options.fps
+  }else{
+    let vinfo = await getVideoInfo(source)
+    fps = eval(vinfo.streams[0].r_frame_rate).toFixed(2)
+  }
 
-module.exports = videoToFrames
+  cmd = [
+    '-r',
+    fps,
+    '-f',
+    'image2',
+    '-s',
+    '1024x1024',
+    '-i',
+    `${indir}%d.jpg`,
+    source ? '-i' : '', // mux audio from source in if passed in
+    source ? source : '',
+    source ? '-map' : '',
+    source ? '0:v' : '',
+    source ? '-map' : '',
+    source ? '1:a' : '',
+    source ? '-c:a' : '',
+    source ? 'copy' : '',
+    source ? '-shortest' : '',
+    '-vcodec',
+    'libx264',
+    '-crf',
+    '17',
+    '-pix_fmt',
+    'yuv420p',
+    outfile
+  ]
+  tryExeca(ffmpeg,cmd)
+}
+
+module.exports = {videoToFrames, framesToVideo}
