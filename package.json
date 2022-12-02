@@ -20,7 +20,9 @@
     "commander": "^9.4.1",
     "execa": "^5.1.1",
     "ffmpeg-static": "^5.1.0",
+    "ffprobe-static": "^3.1.0",
     "node-fetch": "^2.6.7",
+    "progress-bar-cli": "^1.0.4",
     "winston": "^3.8.2"
   }
 }
