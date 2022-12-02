@@ -40,7 +40,7 @@ if (options.debug) log.level = 'debug';
 
   let t0 = new Date()
   for (const [i,e] of files.entries()) {
-    progressBar.progressBar(i, files.length, t0, {style:4});
+    progressBar.progressBar(i, files.length, t0);
     is.segmap=fs.readFileSync(e)
     let res = await is.infer()
     let blob = await res.blob()
