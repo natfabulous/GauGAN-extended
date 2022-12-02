@@ -18,6 +18,8 @@
   "homepage": "https://github.com/natfabulous/GauGAN-extended#readme",
   "dependencies": {
     "commander": "^9.4.1",
+    "execa": "^5.1.1",
+    "ffmpeg-static": "^5.1.0",
     "node-fetch": "^2.6.7",
     "winston": "^3.8.2"
   }

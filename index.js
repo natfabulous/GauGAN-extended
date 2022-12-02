@@ -7,15 +7,18 @@ const InferenceSession = require('./fetch')
 // Command line args
 program
   .option('-d, --debug', 'output extra debugging')
+  .option('-i, --input', 'input directory for the shit you want to send to the gaugan')
 program.parse(process.argv);
 
 const options = program.opts();
 if (options.debug) log.level = 'debug';
 
+
 // Actual program
 
-// get Files
-let dirname = 'X:\\Scratch\\invoke animation\\ipod\\frames'
+// get Files 
+let indir = options.input
+let outdir = indir + "\\out"
 const dir = fs.opendirSync(dirname)
 let files = [], e
 while ((e = dir.readSync()) !== null) { files.push(dirname+'\\'+e.name)}
@@ -33,6 +36,9 @@ log.log(files)
     let abuff = await blob.arrayBuffer();
     let uarr = new Uint8Array(abuff)
     let buff = Buffer.from(uarr)
-    fs.writeFileSync(`out/iphone/1/${i+1}.jpg`, buff)
+    if (!fs.existsSync(`${outdir}`)){
+      fs.mkdirSync(`${outdir}`);
+    }
+    fs.writeFileSync(`${outdir}/${i+1}.jpg`, buff)
   }
 })()
