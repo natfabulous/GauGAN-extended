@@ -2,9 +2,16 @@
   "name": "gaugan-extended",
   "version": "1.0.0",
   "description": "",
-  "main": "fetch.js",
+  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepare": "husky install client/.husky"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "npx pretty-quick --staged ng lint ng test",
+      "pre-push": "ng build --aot true"
+    }
   },
   "repository": {
     "type": "git",
@@ -24,5 +31,14 @@
     "node-fetch": "^2.6.7",
     "progress-bar-cli": "^1.0.4",
     "winston": "^3.8.2"
+  },
+  "devDependencies": {
+    "eslint": "^8.29.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-vue": "^9.8.0",
+    "husky": "^8.0.2",
+    "prettier": "^2.8.0",
+    "pretty-quick": "^3.1.3"
   }
 }
