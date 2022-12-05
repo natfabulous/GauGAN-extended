@@ -1,20 +1,19 @@
-const fetch = require('node-fetch')
-const b64_defaults = require('./b64_defaults')
-const logger = require('./logger')
+const fetch = require('node-fetch');
+const b64_defaults = require('./b64_defaults');
+const logger = require('./logger');
 
 class InferenceSession {
-  constructor(sessionId = "11/29/2022,1669731158519-190985090") {
+  constructor(sessionId = '11/29/2022,1669731158519-190985090') {
     this.sessionId = sessionId;
-    this.masked_segmap_b64 =  b64_defaults.sky
-    this.masked_edgemap_b64 = b64_defaults.blank
-    this.masked_image_b64 =   b64_defaults.blank
-    this.image_data_prefix = 'data:image/png;base64,'
-    this.enable_seg=true
-    this.enable_edge=false
-    this.enable_caption=false
-    this.enable_image=false
-    this.calculateBodies()
-
+    this.masked_segmap_b64 = b64_defaults.sky;
+    this.masked_edgemap_b64 = b64_defaults.blank;
+    this.masked_image_b64 = b64_defaults.blank;
+    this.image_data_prefix = 'data:image/png;base64,';
+    this.enable_seg = true;
+    this.enable_edge = false;
+    this.enable_caption = false;
+    this.enable_image = false;
+    this.calculateBodies();
   }
   calculateBodies() {
     this.infer_body =
@@ -31,59 +30,74 @@ class InferenceSession {
       `&enable_edge=${this.enable_edge}` +
       `&enable_caption=${this.enable_caption}` +
       `&enable_image=${this.enable_image}` +
-      `&use_model2=false`
+      `&use_model2=false`;
 
     this.receive_body =
       `------WebKitFormBoundaryjq68f6wHEgmrzYgL\r\n` +
       `Content-Disposition: form-data; name=\"name\"\r\n` +
       `\r\n` +
       `${this.sessionId}\r\n` +
-      `------WebKitFormBoundaryjq68f6wHEgmrzYgL--\r\n`
+      `------WebKitFormBoundaryjq68f6wHEgmrzYgL--\r\n`;
   }
   async infer() {
-    var res = await infer(this.infer_body)
-    if (res.status !== 200) { logger.error(`Inference POST request: ${res.status}`); return false }
-    var res = await receive(this.receive_body)
-    if (res.status !== 200) { logger.error(`Receive POST request: ${res.status}`); return false}
-    return res
+    var res = await infer(this.infer_body);
+    if (res.status !== 200) {
+      logger.error(`Inference POST request: ${res.status}`);
+      return false;
+    }
+    var res = await receive(this.receive_body);
+    if (res.status !== 200) {
+      logger.error(`Receive POST request: ${res.status}`);
+      return false;
+    }
+    return res;
   }
-  set segmap(buf){
-    this.masked_segmap_b64 = buf.toString('base64')
-    this.enable_seg=true
-    this.calculateBodies()
+  set segmap(buf) {
+    this.masked_segmap_b64 = buf.toString('base64');
+    this.enable_seg = true;
+    this.calculateBodies();
   }
 }
 
-let infer = async (body)=> {
-  logger.debug('infer fetch sent')
-  return await fetch("http://ec2-54-184-13-84.us-west-2.compute.amazonaws.com:443/gaugan2_infer", {
-    "headers": {
-      "accept": "*/*",
-      "accept-language": "en-US,en;q=0.9",
-      "cache-control": "no-cache",
-      "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
-      "pragma": "no-cache",
-      "Referer": "http://gaugan.org/",
-      "Referrer-Policy": "strict-origin-when-cross-origin"
-    },
-    "body": body,
-    "method": "POST"
-  });}
+let infer = async (body) => {
+  logger.debug('infer fetch sent');
+  return await fetch(
+    'http://ec2-54-184-13-84.us-west-2.compute.amazonaws.com:443/gaugan2_infer',
+    {
+      headers: {
+        accept: '*/*',
+        'accept-language': 'en-US,en;q=0.9',
+        'cache-control': 'no-cache',
+        'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        pragma: 'no-cache',
+        Referer: 'http://gaugan.org/',
+        'Referrer-Policy': 'strict-origin-when-cross-origin'
+      },
+      body: body,
+      method: 'POST'
+    }
+  );
+};
 
-let receive = async (body)=> {
-  logger.debug('receive fetch sent')
-  return await fetch("http://ec2-54-184-13-84.us-west-2.compute.amazonaws.com:443/gaugan2_receive_output", {
-    "headers": {
-      "accept": "*/*",
-      "accept-language": "en-US,en;q=0.9",
-      "cache-control": "no-cache",
-      "content-type": "multipart/form-data; boundary=----WebKitFormBoundaryjq68f6wHEgmrzYgL",
-      "pragma": "no-cache",
-      "Referer": "http://gaugan.org/",
-      "Referrer-Policy": "strict-origin-when-cross-origin"
-    },
-    "body": body,
-    "method": "POST"
-  });}
+let receive = async (body) => {
+  logger.debug('receive fetch sent');
+  return await fetch(
+    'http://ec2-54-184-13-84.us-west-2.compute.amazonaws.com:443/gaugan2_receive_output',
+    {
+      headers: {
+        accept: '*/*',
+        'accept-language': 'en-US,en;q=0.9',
+        'cache-control': 'no-cache',
+        'content-type':
+          'multipart/form-data; boundary=----WebKitFormBoundaryjq68f6wHEgmrzYgL',
+        pragma: 'no-cache',
+        Referer: 'http://gaugan.org/',
+        'Referrer-Policy': 'strict-origin-when-cross-origin'
+      },
+      body: body,
+      method: 'POST'
+    }
+  );
+};
 
-  module.exports = InferenceSession
+module.exports = InferenceSession;

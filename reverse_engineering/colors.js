@@ -1,4 +1,6 @@
-var colors = [  '000000','#511f61',
+var colors = [
+  '000000',
+  '#511f61',
   'lineJoin',
   '#03c098',
   '#04434f',
@@ -178,5 +180,5 @@ var colors = [  '000000','#511f61',
   '#info_sketch',
   '#b356b8',
   '#b42b5b',
-  '#9ceedd',
-]
+  '#9ceedd'
+];
