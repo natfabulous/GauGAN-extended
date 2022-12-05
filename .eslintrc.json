@@ -12,6 +12,8 @@
   "plugins": ["vue"],
   "rules": {
     "no-await-in-loop": "warn",
-    "no-plusplus": "warn"
+    "no-plusplus": "warn",
+    "operator-linebreak": "off",
+    "comma-dangle": "off"
   }
 }
