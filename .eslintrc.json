@@ -10,5 +10,8 @@
     "sourceType": "module"
   },
   "plugins": ["vue"],
-  "rules": {}
+  "rules": {
+    "no-await-in-loop": "warn",
+    "no-plusplus": "warn"
+  }
 }

@@ -2,11 +2,11 @@
 const fs = require('fs');
 const path = require('path');
 const { program } = require('commander');
-const log = require('./logger');
+const progressBar = require('progress-bar-cli');
+const log = require('./utils/logger');
 const InferenceSession = require('./fetch');
 const { mkdir } = require('./utils/filenameplus');
 const { videoToFrames, framesToVideo } = require('./utils/ffmpegUtils');
-const progressBar = require('progress-bar-cli');
 
 // Command line args
 program
@@ -34,31 +34,27 @@ if (options.debug) log.level = 'debug';
       await videoToFrames(options.video, options.working);
     }
     // wrangle input images
-    let imagedir = options.working ? options.working : options.directory;
-    let outdir = options.output;
-    const dir = fs.opendirSync(imagedir);
-    let files = [],
-      e;
-    while ((e = dir.readSync()) !== null) {
-      files.push(imagedir + '\\' + e.name);
-    }
-    dir.closeSync();
+    const imagedir = options.working ? options.working : options.directory;
+    const outdir = options.output;
+    const files = [];
+    fs.readdirSync(imagedir).forEach((e) => {
+      files.push(`${imagedir}\\${e.name}`);
+    });
     files.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-    log.log(files);
     log.log('Creating InferenceSession');
-    let is = new InferenceSession(
+    const is = new InferenceSession(
       new Date().toISOString().slice(0, -5).replaceAll(':', '_')
     );
 
-    let t0 = new Date();
-    for (const [i, e] of files.entries()) {
+    const t0 = new Date();
+    for (let i = 0; i < files.length; i++) {
       progressBar.progressBar(i, files.length, t0);
-      is.segmap = fs.readFileSync(e);
-      let res = await is.infer();
-      let blob = await res.blob();
-      let abuff = await blob.arrayBuffer();
-      let uarr = new Uint8Array(abuff);
-      let buff = Buffer.from(uarr);
+      is.segmap = fs.readFileSync(files[i]);
+      const res = await is.infer();
+      const blob = await res.blob();
+      const abuff = await blob.arrayBuffer();
+      const uarr = new Uint8Array(abuff);
+      const buff = Buffer.from(uarr);
       mkdir(outdir);
       fs.writeFileSync(`${outdir}/${i + 1}.jpg`, buff);
     }

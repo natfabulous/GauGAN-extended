@@ -1,6 +1,6 @@
 const path = require('path');
 const fs = require('fs');
-const log = require('../logger');
+const log = require('./logger');
 
 const mkdir = (dir) => {
   try {
