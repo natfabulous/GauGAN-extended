@@ -2,6 +2,7 @@
 const execa = require('execa');
 const ffmpeg = require('ffmpeg-static');
 const ffprobe = require('ffprobe-static').path;
+const path = require('path');
 const { extendName, extendPath } = require('./filenameplus');
 const log = require('./logger');
 
@@ -53,13 +54,15 @@ const cropVideoSquare = async (infile, ofile, vinfo) => {
     width < height ? 'crop=iw:iw' : 'crop=ih:ih',
     ofile
   ];
-  tryExeca(ffmpeg, cmd);
+  return tryExeca(ffmpeg, cmd);
 };
 const evalDivString = (divString) => {
   const arr = divString.split('/');
   return arr[0] / arr[1];
 };
 const videoToFrames = async (infile, outdir) => {
+  log.log(infile);
+  log.log(outdir);
   const vinfo = await getVideoInfo(infile);
   const croppedPath = extendPath(
     extendName(infile, '-cropped'),
@@ -67,7 +70,7 @@ const videoToFrames = async (infile, outdir) => {
   );
   await cropVideoSquare(infile, croppedPath, vinfo);
   const cmd = ['-i', croppedPath, `${outdir}/%d.png`];
-  tryExeca(ffmpeg, cmd);
+  return tryExeca(ffmpeg, cmd);
 };
 const framesToVideo = async (indir, outfile, options) => {
   let fps = 30; // reasonable default
@@ -87,7 +90,7 @@ const framesToVideo = async (indir, outfile, options) => {
     '-s',
     '1024x1024',
     '-i',
-    `${indir}%d.jpg`,
+    `${indir}/%d.jpg`,
     source ? '-i' : '', // mux audio from source in if passed in
     source || '',
     source ? '-map' : '',
@@ -103,8 +106,8 @@ const framesToVideo = async (indir, outfile, options) => {
     '17',
     '-pix_fmt',
     'yuv420p',
-    outfile
+    path.join(outfile, 'out.mp4')
   ];
-  tryExeca(ffmpeg, cmd);
+  return tryExeca(ffmpeg, cmd);
 };
 module.exports = { calcNumberOfFrames, videoToFrames, framesToVideo };

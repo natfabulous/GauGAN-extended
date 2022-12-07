@@ -7,6 +7,7 @@ const log = require('./utils/logger');
 const InferenceSession = require('./fetch');
 const { mkdir } = require('./utils/filenameplus');
 const { videoToFrames, framesToVideo } = require('./utils/ffmpegUtils');
+const { dateString, repoName, filePathNoExt } = require('./utils/utils');
 
 // Command line args
 program
@@ -16,10 +17,7 @@ program
     '-w, --working [string]',
     'working directory where intermediary info is saved'
   )
-  .option('-d, --directory [string]', 'input directory for image sequences')
-  .option('-o, --output [string]', 'output directory')
-  .option('-x, --skipToMux', 'skip straight to muxing')
-  .option('-m, --targetVideoFile [string]', 'target for muxed video file');
+  .option('-o, --output [string]', 'output directory');
 program.parse(process.argv);
 
 // indir may not be set yet
@@ -28,40 +26,38 @@ if (options.debug) log.level = 'debug';
 
 // Actual program
 (async () => {
-  if (!options.skipToMux) {
-    if (options.working) mkdir(options.working);
-    if (options.video) {
-      await videoToFrames(options.video, options.working);
-    }
-    // wrangle input images
-    const imagedir = options.working ? options.working : options.directory;
-    const outdir = options.output;
-    const files = [];
-    fs.readdirSync(imagedir).forEach((e) => {
-      files.push(`${imagedir}\\${e.name}`);
-    });
-    files.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-    log.log('Creating InferenceSession');
-    const is = new InferenceSession(
-      new Date().toISOString().slice(0, -5).replaceAll(':', '_')
-    );
+  const uniqueDate = dateString();
+  const workDir = `${filePathNoExt(options.video)}_${repoName}`;
+  const framesDir = path.join(workDir, `ffmpeg_images_${uniqueDate}`);
+  const ggImageDir = path.join(workDir, `GauGAN_images_${uniqueDate}`);
+  const videoOutDir = path.join(workDir, `video_out_${uniqueDate}`);
+  mkdir(framesDir);
+  await videoToFrames(options.video, framesDir);
+  // wrangle input images
+  const files = [];
+  fs.readdirSync(framesDir).forEach((e) => {
+    files.push(`${framesDir}\\${e}`);
+  });
+  files.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+  log.log('Creating InferenceSession');
+  const inferenceSession = new InferenceSession(uniqueDate);
 
-    const t0 = new Date();
-    for (let i = 0; i < files.length; i++) {
-      progressBar.progressBar(i, files.length, t0);
-      is.segmap = fs.readFileSync(files[i]);
-      const res = await is.infer();
-      const blob = await res.blob();
-      const abuff = await blob.arrayBuffer();
-      const uarr = new Uint8Array(abuff);
-      const buff = Buffer.from(uarr);
-      mkdir(outdir);
-      fs.writeFileSync(`${outdir}/${i + 1}.jpg`, buff);
-    }
-  } else {
-    mkdir(path.parse(options.targetVideoFile).dir);
-    await framesToVideo(options.working, options.targetVideoFile, {
-      sourceVideo: options.video
-    });
+  const t0 = new Date();
+  mkdir(ggImageDir);
+  for (let i = 0; i < files.length; i++) {
+    progressBar.progressBar(i, files.length, t0);
+    inferenceSession.segmap = fs.readFileSync(files[i]);
+    const res = await inferenceSession.infer();
+    const blob = await res.blob();
+    const abuff = await blob.arrayBuffer();
+    const uarr = new Uint8Array(abuff);
+    const buff = Buffer.from(uarr);
+    fs.writeFileSync(`${ggImageDir}/${i + 1}.jpg`, buff);
   }
+
+  log.log('Stitching video back together (FFmpeg)');
+  mkdir(videoOutDir);
+  await framesToVideo(ggImageDir, videoOutDir, {
+    sourceVideo: options.video
+  });
 })();
