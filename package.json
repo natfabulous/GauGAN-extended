@@ -24,12 +24,16 @@
   },
   "homepage": "https://github.com/natfabulous/GauGAN-extended#readme",
   "dependencies": {
+    "colortranslator": "^1.9.3",
     "commander": "^9.4.1",
     "execa": "^5.1.1",
     "ffmpeg-static": "^5.1.0",
     "ffprobe-static": "^3.1.0",
+    "image-q": "^4.0.0",
     "node-fetch": "^2.6.7",
+    "pngjs": "^6.0.0",
     "progress-bar-cli": "^1.0.4",
+    "replace-color-multicolor": "^1.0.0",
     "winston": "^3.8.2"
   },
   "devDependencies": {

@@ -15,6 +15,13 @@
     "no-plusplus": "warn",
     "operator-linebreak": "off",
     "comma-dangle": "off",
-    "semi": "off"
+    "semi": "off",
+    "implicit-arrow-linebreak": "off",
+    "prefer-const": "warn",
+    "no-param-reassign": "warn",
+    "no-underscore-dangle": "warn",
+    "arrow-body-style": "off",
+    "prefer-destructuring": "warn",
+    "linebreak-style": "off"
   }
 }

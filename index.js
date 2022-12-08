@@ -8,6 +8,8 @@ const InferenceSession = require('./fetch');
 const { mkdir } = require('./utils/filenameplus');
 const { videoToFrames, framesToVideo } = require('./utils/ffmpegUtils');
 const { dateString, repoName, filePathNoExt } = require('./utils/utils');
+const imq = require('./utils/imq');
+const colorMap = require('./utils/colorMap');
 
 // Command line args
 program
@@ -27,28 +29,62 @@ if (options.debug) log.level = 'debug';
 // Actual program
 (async () => {
   const uniqueDate = dateString();
-  const workDir = `${filePathNoExt(options.video)}_${repoName}`;
-  const framesDir = path.join(workDir, `ffmpeg_images_${uniqueDate}`);
-  const ggImageDir = path.join(workDir, `GauGAN_images_${uniqueDate}`);
-  const videoOutDir = path.join(workDir, `video_out_${uniqueDate}`);
+  const workDir = path.join(
+    `${filePathNoExt(options.video)}_${repoName}`,
+    uniqueDate
+  );
+  const framesDir = path.join(workDir, 'ffmpeg_images');
+  const framsQuanted = path.join(workDir, 'ffmpeg_images', 'quantized');
+  const framesImq = path.join(workDir, 'ffmpeg_images', 'imq');
+  const ggImageDir = path.join(workDir, 'GauGAN_images');
+  const videoOutDir = path.join(workDir, 'video_out');
   mkdir(framesDir);
+  mkdir(framsQuanted);
+  mkdir(framesImq);
   await videoToFrames(options.video, framesDir);
   // wrangle input images
   const files = [];
   fs.readdirSync(framesDir).forEach((e) => {
-    files.push(`${framesDir}\\${e}`);
+    const filePath = path.join(framesDir, e);
+    if (!fs.lstatSync(filePath).isDirectory()) files.push(filePath);
   });
   files.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+  // files = files.slice(0, 2)
+  // Input cleanup and reseg/quant
+  log.log('Running quantizations...');
+  let t0 = new Date();
+  for (let i = 0; i < files.length; i++) {
+    progressBar.progressBar(i, files.length, t0);
+    const fileName = path.parse(files[i]).base;
+    const input = path.join(framesDir, fileName);
+    const inter = path.join(framsQuanted, fileName);
+    const out = path.join(framesImq, fileName);
+    imq.process(input, inter, out, [
+      colorMap.water,
+      colorMap.mountain,
+      colorMap.clouds
+    ]);
+  }
+
+  const cleanedImages = [];
+  fs.readdirSync(framesImq).forEach((e) => {
+    const filePath = path.join(framesImq, e);
+    if (!fs.lstatSync(filePath).isDirectory()) cleanedImages.push(filePath);
+  });
+  cleanedImages.sort((a, b) =>
+    a.localeCompare(b, undefined, { numeric: true })
+  );
+
   log.log('Creating InferenceSession');
   const inferenceSession = new InferenceSession(uniqueDate);
 
-  const t0 = new Date();
+  t0 = new Date();
   mkdir(ggImageDir);
-  for (let i = 0; i < files.length; i++) {
-    progressBar.progressBar(i, files.length, t0);
-    inferenceSession.segmap = fs.readFileSync(files[i]);
+  for (let i = 0; i < cleanedImages.length; i++) {
+    progressBar.progressBar(i, cleanedImages.length, t0);
+    inferenceSession.segmap = fs.readFileSync(cleanedImages[i]);
     const res = await inferenceSession.infer();
-    const blob = await res.blob();
+    const blob = res ? await res.blob() : log.error(`Invalid Response: ${res}`);
     const abuff = await blob.arrayBuffer();
     const uarr = new Uint8Array(abuff);
     const buff = Buffer.from(uarr);
